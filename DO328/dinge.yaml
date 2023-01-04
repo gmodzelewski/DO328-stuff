@@ -1,0 +1,14 @@
+GATEWAY_URL=$(oc get route istio-ingressgateway -n istio-system -o template --template '{{ "http://" }}{{ .spec.host }}')
+KIALI_URL=$(oc get route kiali -n istio-system -o template --template '{{ "https://" }}{{ .spec.host }}')
+GRAFANA_URL=$( oc get route grafana -n istio-system -o template --template '{{ "https://" }}{{ .spec.host }}')
+JAEGER_URL=$(oc get route jaeger -n istio-system -o template --template '{{ "https://" }}{{ .spec.host }}')
+
+AB_PROXY_URL=$(oc get route ab-proxy -n traffic-mesh-proxy -o template --template '{{ "http://" }}{{ .spec.host }}'))
+oc patch smcp basic --type merge -n istio-system -p '{"spec":{"proxy":{"networking":{"trafficControl":{"outbound":{policy":"REGISTRY_ONLY"}}}}}}'
+NEWS_HOST=$(oc get route news -n traffic-mesh-news -o jsonpath="{.spec.host}")
+
+sed -e "s/_NEWS_HOST_/$NEWS_HOST/g" ~/DO328/solutions/traffic-mesh/service-entry.yaml | oc create -f -
+
+
+
+oc get pods -o name | xargs -L 1 oc logs --tail 1 -c vertx-greet
